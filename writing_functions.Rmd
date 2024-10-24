@@ -52,6 +52,167 @@ z_scores(x = c("my", "name", "is", "maya")) # not numeric vector
 ```
 
 
+## A new function!
+
+```{r}
+mean_and_sd = function(x) {
+  
+  mean_x = mean(x)
+  sd_x = sd(x)
+  
+  output_df =
+    tibble(
+      mean = mean_x,
+      sd = sd_x
+    )
+  
+  return(output_df)
+}
+
+mean_and_sd(x_vec)
+```
+
+
+## Check stuff using a simulation.
+
+```{r}
+sim_df = tibble(
+  x = rnorm(30, 10, 5)
+)
+
+sim_df |> 
+  summarize(
+    mean = mean(x),
+    sd = sd(x)
+  )
+```
+
+Simulation function to check sample mean and SD.
+
+```{r}
+sim_mean_sd = function(samp_size, true_mean, true_sd) {
+  
+  sim_df = 
+    tibble(
+      x = rnorm(samp_size, true_mean, true_sd)
+    )
+
+  out_df =
+    sim_df |> 
+    summarize(
+      mean = mean(x),
+      sd = sd(x)
+    )
+  
+  return(out_df)
+
+}
+sim_mean_sd(samp_size = 30, true_mean = 4, true_sd = 12)
+sim_mean_sd(samp_size = 3000, true_mean = 4, true_sd = 12)
+
+sim_mean_sd(30, 16, 2)
+```
+
+## LoTR Data
+
+```{r}
+fellowship_df = 
+  readxl::read_excel("./data/LotR_Words.xlsx", range = "B3:D6") |>
+  mutate(movie = "fellowship_ring") |> 
+  janitor::clean_names()
+
+two_towers_df = 
+  readxl::read_excel("./data/LotR_Words.xlsx", range = "F3:H6") |>
+  mutate(movie = "two_towers") |> 
+  janitor::clean_names()
+
+return_king_df = 
+  readxl::read_excel("./data/LotR_Words.xlsx", range = "J3:L6") |>
+  mutate(movie = "return_king") |> 
+  janitor::clean_names()
+```
+
+Try to write a function instead.
+
+```{r}
+import_lotr_data = function(movie_title, cell_range) {
+
+  movie_df = 
+  readxl::read_excel("./data/LotR_Words.xlsx", range = cell_range) |>
+  mutate(movie = movie_title) |> 
+  janitor::clean_names() |> 
+  pivot_longer(
+    female:male,
+    names_to = "sex",
+    values_to = "words"
+  ) |>
+  select(movie, everything())
+  
+  return(movie_df)
+}
+
+lotr_df = 
+  bind_rows(
+    import_lotr_data(movie_title = "fellowship_ring", cell_range = "B3:D6"),
+    import_lotr_data("two_towers", "F3:H6"),
+    import_lotr_data("return_king", "J3:L6")
+  )
+```
+
+## NSDUH Example
+
+```{r}
+nsduh_url = "http://samhda.s3-us-gov-west-1.amazonaws.com/s3fs-public/field-uploads/2k15StateFiles/NSDUHsaeShortTermCHG2015.htm"
+
+nsduh_html = read_html(nsduh_url)
+
+marj_table = 
+  nsduh_html |> 
+  html_table() |> 
+  nth(1) |> 
+  slice(-1) |> 
+  mutate(drug = "marijuana")
+
+cocaine_table = 
+  nsduh_html |> 
+  html_table() |> 
+  nth(2) |> 
+  slice(-1) |> 
+  mutate(drug = "cocaine")
+
+heroin_table = 
+  nsduh_html |> 
+  html_table() |> 
+  nth(5) |> 
+  slice(-1) |> 
+  mutate(drug = "heroin")
+```
+
+Write a function for the same purpose.
+
+```{r}
+
+nsduh_table = function(html, drug_name, table) {
+  out_df = 
+    html |> 
+    html_table() |> 
+    nth(table) |>
+    slice(-1) |> 
+    mutate(drug = drug_name)
+  
+  return(out_df)
+  
+}
+
+nsduh_url = "http://samhda.s3-us-gov-west-1.amazonaws.com/s3fs-public/field-uploads/2k15StateFiles/NSDUHsaeShortTermCHG2015.htm"
+
+nsduh_html = read_html(nsduh_url)
+
+nsduh_table(nsduh_html, "marijuana", 1)
+nsduh_table(nsduh_html, "cocaine", 4)
+nsduh_table(nsduh_html, "heroin", 5)
+
+```
 
 
 
